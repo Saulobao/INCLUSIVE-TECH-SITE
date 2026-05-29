@@ -3,20 +3,28 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Baby Monitor ESP32 API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: device
+    description: ESP32 device operations
+  - name: alerts
+    description: AI alert operations
+  - name: events
+    description: Event history operations
+  - name: dashboard
+    description: Dashboard summary
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +32,211 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /device/status:
+    get:
+      operationId: getDeviceStatus
+      tags: [device]
+      summary: Get ESP32 device status
+      responses:
+        "200":
+          description: Device status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceStatus"
+    patch:
+      operationId: updateDeviceConfig
+      tags: [device]
+      summary: Update device configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceConfigInput"
+      responses:
+        "200":
+          description: Updated configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceStatus"
+
+  /alerts:
+    get:
+      operationId: listAlerts
+      tags: [alerts]
+      summary: List AI alerts
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: acknowledged
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alert"
+
+  /alerts/{id}:
+    get:
+      operationId: getAlert
+      tags: [alerts]
+      summary: Get a specific alert
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Alert details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+        "404":
+          description: Not found
+
+  /alerts/{id}/acknowledge:
+    patch:
+      operationId: acknowledgeAlert
+      tags: [alerts]
+      summary: Acknowledge an AI alert
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Alert acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+
+  /alerts/acknowledge-all:
+    post:
+      operationId: acknowledgeAllAlerts
+      tags: [alerts]
+      summary: Acknowledge all unread alerts
+      responses:
+        "200":
+          description: All alerts acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcknowledgeAllResult"
+
+  /events:
+    get:
+      operationId: listEvents
+      tags: [events]
+      summary: List event history
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+        - name: to
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Summary statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/activity-feed:
+    get:
+      operationId: getActivityFeed
+      tags: [dashboard]
+      summary: Get recent activity feed (combined alerts + events)
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /dashboard/alert-stats:
+    get:
+      operationId: getAlertStats
+      tags: [dashboard]
+      summary: Get alert counts grouped by type for the last 24 hours
+      responses:
+        "200":
+          description: Alert statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AlertStat"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +247,153 @@ components:
       required:
         - status
 
+    DeviceStatus:
+      type: object
+      required: [id, name, online, batteryLevel, wifiSignal, temperature, humidity, streamUrl, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        online:
+          type: boolean
+        batteryLevel:
+          type: integer
+          description: Battery percentage 0-100
+        wifiSignal:
+          type: integer
+          description: WiFi signal strength in dBm
+        temperature:
+          type: number
+          description: Room temperature in Celsius
+        humidity:
+          type: number
+          description: Room humidity in percent
+        streamUrl:
+          type: ["string", "null"]
+          description: MJPEG stream URL from ESP32
+        nightModeEnabled:
+          type: boolean
+        sensitivityLevel:
+          type: integer
+          description: AI detection sensitivity 1-5
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    DeviceConfigInput:
+      type: object
+      properties:
+        name:
+          type: string
+        nightModeEnabled:
+          type: boolean
+        sensitivityLevel:
+          type: integer
+          minimum: 1
+          maximum: 5
+        streamUrl:
+          type: string
+
+    Alert:
+      type: object
+      required: [id, type, severity, message, acknowledged, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          description: "motion | crying | temperature | sound | offline | online"
+        severity:
+          type: string
+          description: "low | medium | high | critical"
+        message:
+          type: string
+        confidence:
+          type: ["number", "null"]
+          description: AI confidence score 0.0-1.0
+        acknowledged:
+          type: boolean
+        acknowledgedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    AcknowledgeAllResult:
+      type: object
+      required: [count]
+      properties:
+        count:
+          type: integer
+
+    Event:
+      type: object
+      required: [id, type, description, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          description: "motion_detected | baby_crying | temperature_alert | device_online | device_offline | night_mode_on | night_mode_off | sound_detected"
+        description:
+          type: string
+        metadata:
+          type: ["string", "null"]
+          description: JSON string with extra event data
+        createdAt:
+          type: string
+
+    DashboardSummary:
+      type: object
+      required: [totalAlertsToday, unacknowledgedAlerts, deviceOnline, averageTemperature, averageHumidity, lastEventAt]
+      properties:
+        totalAlertsToday:
+          type: integer
+        unacknowledgedAlerts:
+          type: integer
+        deviceOnline:
+          type: boolean
+        averageTemperature:
+          type: number
+        averageHumidity:
+          type: number
+        lastEventAt:
+          type: ["string", "null"]
+        criticalAlerts:
+          type: integer
+        motionEvents:
+          type: integer
+        cryingEvents:
+          type: integer
+
+    ActivityItem:
+      type: object
+      required: [id, kind, type, message, timestamp]
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          description: "alert | event"
+        type:
+          type: string
+        message:
+          type: string
+        severity:
+          type: ["string", "null"]
+        acknowledged:
+          type: ["boolean", "null"]
+        timestamp:
+          type: string
+
+    AlertStat:
+      type: object
+      required: [type, count]
+      properties:
+        type:
+          type: string
+        count:
+          type: integer
+        label:
+          type: string

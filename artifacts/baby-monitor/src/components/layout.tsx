@@ -23,7 +23,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="h-16 flex items-center px-6 border-b border-border">
           <div className="flex items-center gap-2 text-primary">
             <Baby className="h-6 w-6" />
-            <span className="font-semibold text-lg tracking-tight">BabyWatch</span>
+            <span className="font-semibold text-lg tracking-tight">INCLUSIVE TECH</span>
           </div>
         </div>
 
@@ -47,7 +47,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </aside>
-
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-full overflow-hidden relative">
         <div className="absolute inset-0 pointer-events-none opacity-5 mix-blend-overlay">

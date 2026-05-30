@@ -8,6 +8,7 @@ import Dashboard from "@/pages/dashboard";
 import AlertsPage from "@/pages/alerts";
 import EventsPage from "@/pages/events";
 import SettingsPage from "@/pages/settings";
+import CreditsPage from "@/pages/credits";
 
 const queryClient = new QueryClient();
 
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/alerts" component={AlertsPage} />
       <Route path="/events" component={EventsPage} />
       <Route path="/settings" component={SettingsPage} />
+      <Route path="/credits" component={CreditsPage} />
       <Route component={NotFound} />
     </Switch>
   );

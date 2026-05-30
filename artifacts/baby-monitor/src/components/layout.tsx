@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { Home, Bell, Activity, Settings, Monitor } from "lucide-react";
+import { Home, Bell, Activity, Settings, Monitor, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGetDeviceStatus, getGetDeviceStatusQueryKey } from "@workspace/api-client-react";
 
@@ -33,6 +33,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <NavItem href="/alerts" icon={Bell} label="Alertas" active={location === "/alerts"} />
           <NavItem href="/events" icon={Activity} label="Eventos" active={location === "/events"} />
           <NavItem href="/settings" icon={Settings} label="Configurações" active={location === "/settings"} />
+          <NavItem href="/credits" icon={Star} label="Créditos" active={location === "/credits"} />
         </nav>
 
         <div className="p-4 border-t border-border">

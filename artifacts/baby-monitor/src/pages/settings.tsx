@@ -1,5 +1,11 @@
 import { Layout } from "@/components/layout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,10 +22,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Save, RefreshCw, Wifi, Thermometer } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTheme, THEME_PRESETS, type ThemeColor } from "@/lib/theme";
 
 export default function SettingsPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { color: themeColor, setColor: setThemeColor } = useTheme();
 
   const { data: device, isLoading } = useGetDeviceStatus({
     query: {
@@ -48,7 +56,7 @@ export default function SettingsPage() {
         queryClient.invalidateQueries({
           queryKey: getGetDeviceStatusQueryKey(),
         });
-        toast({ title: "Configuracoes salvas com sucesso" });
+        toast({ title: "Configurações salvas com sucesso" });
       },
       onError: () => {
         toast({
@@ -71,7 +79,13 @@ export default function SettingsPage() {
     });
   };
 
-  const sensitivityLabels = ["Muito baixa", "Baixa", "Media", "Alta", "Muito alta"];
+  const sensitivityLabels = [
+    "Muito baixa",
+    "Baixa",
+    "Média",
+    "Alta",
+    "Muito alta",
+  ];
 
   return (
     <Layout>
@@ -79,14 +93,61 @@ export default function SettingsPage() {
         {/* Header */}
         <div>
           <h1 className="text-xl font-semibold text-foreground">
-            Configuracoes do Dispositivo
+            Configurações
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Configure o ESP32 BabyWatch
+            Configure o dispositivo e a aparência do painel
           </p>
         </div>
 
-        {/* Device Info */}
+        {/* Theme Color */}
+        <Card className="border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">
+              Cor do painel
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Escolha a cor de destaque do layout
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3 flex-wrap">
+              {THEME_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  onClick={() => setThemeColor(preset.id as ThemeColor)}
+                  data-testid={`theme-color-${preset.id}`}
+                  title={preset.label}
+                  className={cn(
+                    "flex flex-col items-center gap-1.5 group focus:outline-none"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "h-9 w-9 rounded-full border-2 transition-transform group-hover:scale-110",
+                      themeColor === preset.id
+                        ? "border-foreground scale-110 shadow-lg"
+                        : "border-transparent"
+                    )}
+                    style={{ backgroundColor: preset.hex }}
+                  />
+                  <span
+                    className={cn(
+                      "text-[10px]",
+                      themeColor === preset.id
+                        ? "text-foreground font-medium"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    {preset.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Device Status */}
         <Card className="border-border">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Status atual</CardTitle>
@@ -94,7 +155,7 @@ export default function SettingsPage() {
           <CardContent>
             {isLoading ? (
               <div className="grid grid-cols-2 gap-3">
-                {Array.from({ length: 4 }).map((_, i) => (
+                {Array.from({ length: 2 }).map((_, i) => (
                   <Skeleton key={i} className="h-12" />
                 ))}
               </div>
@@ -118,7 +179,9 @@ export default function SettingsPage() {
                   <Wifi className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-xs text-muted-foreground">Sinal Wi-Fi</p>
-                    <p className="text-sm font-medium">{device?.wifiSignal ?? "--"} dBm</p>
+                    <p className="text-sm font-medium">
+                      {device?.wifiSignal ?? "--"} dBm
+                    </p>
                   </div>
                 </div>
                 <div className="bg-secondary/50 rounded-md p-3 flex items-center gap-2">
@@ -126,7 +189,8 @@ export default function SettingsPage() {
                   <div>
                     <p className="text-xs text-muted-foreground">Temperatura</p>
                     <p className="text-sm font-medium">
-                      {device?.temperature?.toFixed(1) ?? "--"}°C / {device?.humidity?.toFixed(0) ?? "--"}%
+                      {device?.temperature?.toFixed(1) ?? "--"}°C /{" "}
+                      {device?.humidity?.toFixed(0) ?? "--"}%
                     </p>
                   </div>
                 </div>
@@ -138,9 +202,11 @@ export default function SettingsPage() {
         {/* Config Form */}
         <Card className="border-border">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Configuracoes</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Dispositivo ESP32
+            </CardTitle>
             <CardDescription className="text-xs">
-              Alteracoes sao enviadas ao dispositivo ESP32
+              Alterações são enviadas ao dispositivo
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -162,7 +228,7 @@ export default function SettingsPage() {
             {/* Stream URL */}
             <div className="space-y-2">
               <Label htmlFor="stream-url" className="text-sm">
-                URL do stream de camera (MJPEG)
+                URL da câmera (MJPEG)
               </Label>
               <Input
                 id="stream-url"
@@ -182,7 +248,7 @@ export default function SettingsPage() {
               <div>
                 <Label className="text-sm">Modo noturno</Label>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Reduz brilho e ativa visao infravermelha
+                  Reduz brilho e ativa visão infravermelha
                 </p>
               </div>
               <Switch
@@ -230,7 +296,7 @@ export default function SettingsPage() {
               ) : (
                 <>
                   <Save className="h-4 w-4" />
-                  Salvar configuracoes
+                  Salvar configurações
                 </>
               )}
             </Button>

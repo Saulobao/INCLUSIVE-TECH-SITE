@@ -25,7 +25,6 @@ import {
   Thermometer,
   Droplets,
   Wifi,
-  BatteryMedium,
   AlertTriangle,
   Activity,
   Video,
@@ -246,10 +245,6 @@ export default function Dashboard() {
 
               {/* Device status bar */}
               <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <BatteryMedium className="h-3 w-3" />
-                  {device?.batteryLevel ?? "--"}%
-                </span>
                 <span className="flex items-center gap-1">
                   <Wifi className="h-3 w-3" />
                   {device?.wifiSignal ?? "--"} dBm

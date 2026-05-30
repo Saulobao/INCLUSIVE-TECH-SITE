@@ -14,7 +14,7 @@ import {
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Save, RefreshCw, Wifi, BatteryMedium, Thermometer, Droplets } from "lucide-react";
+import { Save, RefreshCw, Wifi, Thermometer } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
@@ -112,13 +112,6 @@ export default function SettingsPage() {
                     <p className="text-sm font-medium">
                       {device?.online ? "Online" : "Offline"}
                     </p>
-                  </div>
-                </div>
-                <div className="bg-secondary/50 rounded-md p-3 flex items-center gap-2">
-                  <BatteryMedium className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Bateria</p>
-                    <p className="text-sm font-medium">{device?.batteryLevel ?? "--"}%</p>
                   </div>
                 </div>
                 <div className="bg-secondary/50 rounded-md p-3 flex items-center gap-2">

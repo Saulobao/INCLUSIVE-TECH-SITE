@@ -42,7 +42,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
             <div>
               <div className="text-sm font-medium">{isOnline ? "Monitor Online" : "Monitor Offline"}</div>
-              <div className="text-xs opacity-80">{deviceStatus?.batteryLevel}% Battery</div>
             </div>
           </div>
         </div>

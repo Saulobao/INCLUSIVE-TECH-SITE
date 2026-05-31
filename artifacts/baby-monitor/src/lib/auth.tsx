@@ -11,6 +11,7 @@ interface AuthContextValue {
   loading: boolean;
   login: (username: string, password: string) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
+  token: string | null;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -18,19 +19,58 @@ const AuthContext = createContext<AuthContextValue>({
   loading: true,
   login: async () => ({}),
   logout: async () => {},
+  token: null,
 });
 
 const BASE = "https://inclusive-tech-site.onrender.com";
 
+function getToken() {
+  return localStorage.getItem("auth_token");
+}
+
+function saveToken(token: string) {
+  localStorage.setItem("auth_token", token);
+}
+
+function clearToken() {
+  localStorage.removeItem("auth_token");
+}
+
+export function authHeaders(): HeadersInit {
+  const token = getToken();
+  return token
+    ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
+    : { "Content-Type": "application/json" };
+}
+
+export function apiFetch(path: string, options: RequestInit = {}) {
+  const token = getToken();
+  return fetch(`${BASE}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers ?? {}),
+    },
+  });
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(getToken());
 
   useEffect(() => {
-    fetch(`${BASE}/api/auth/me`, { credentials: "include" })
+    const t = getToken();
+    if (!t) {
+      setLoading(false);
+      return;
+    }
+    apiFetch("/api/auth/me")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.ok) setUser(data.user);
+        else clearToken();
       })
       .finally(() => setLoading(false));
   }, []);
@@ -38,12 +78,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (username: string, password: string) => {
     const r = await fetch(`${BASE}/api/auth/login`, {
       method: "POST",
-      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
     const data = await r.json();
     if (r.ok) {
+      saveToken(data.token);
+      setToken(data.token);
       setUser(data.user);
       return {};
     }
@@ -51,15 +92,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await fetch(`${BASE}/api/auth/logout`, {
-      method: "POST",
-      credentials: "include",
-    });
+    await apiFetch("/api/auth/logout", { method: "POST" });
+    clearToken();
+    setToken(null);
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, token }}>
       {children}
     </AuthContext.Provider>
   );

@@ -34,9 +34,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme, THEME_PRESETS, type ThemeColor } from "@/lib/theme";
-import { useAuth } from "@/lib/auth";
-
-const BASE = "https://inclusive-tech-site.onrender.com";
+import { useAuth, apiFetch } from "@/lib/auth";
 
 // ── Hook: lista de usuários ────────────────────────────────────────────────────
 function useUsers() {
@@ -52,7 +50,7 @@ function useUsers() {
 
   const reload = () => {
     setLoading(true);
-    fetch(`${BASE}/api/users`, { credentials: "include" })
+    apiFetch("/api/users")
       .then((r) => r.json())
       .then((d) => {
         if (d.ok) setUsers(d.users);
@@ -134,10 +132,8 @@ export default function SettingsPage() {
       return;
     }
     setPwdLoading(true);
-    const r = await fetch(`${BASE}/api/auth/change-password`, {
+    const r = await apiFetch("/api/auth/change-password", {
       method: "PUT",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         currentPassword: currentPwd,
         newPassword: newPwd,
@@ -170,10 +166,8 @@ export default function SettingsPage() {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreateLoading(true);
-    const r = await fetch(`${BASE}/api/users`, {
+    const r = await apiFetch("/api/users", {
       method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         username: newUsername,
         password: newUserPwd,
@@ -198,10 +192,7 @@ export default function SettingsPage() {
 
   const handleDeleteUser = async (id: number, username: string) => {
     setDeletingId(id);
-    const r = await fetch(`${BASE}/api/users/${id}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
+    const r = await apiFetch(`/api/users/${id}`, { method: "DELETE" });
     const d = await r.json();
     setDeletingId(null);
     if (r.ok) {
@@ -528,154 +519,151 @@ export default function SettingsPage() {
         </Card>
 
         {/* ── User Management ──────────────────────────────────────────────── */}
-        <Card className="border-border">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-sm font-medium">
-                Gerenciar usuários
-              </CardTitle>
-            </div>
-            <CardDescription className="text-xs">
-              Adicione ou remova quem pode acessar o painel
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {/* User list */}
-            <div className="space-y-2">
-              {usersLoading ? (
-                <div className="space-y-2">
-                  {[1, 2].map((i) => (
-                    <Skeleton key={i} className="h-10" />
-                  ))}
-                </div>
-              ) : users.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-3">
-                  Nenhum usuário cadastrado
-                </p>
-              ) : (
-                users.map((u) => (
-                  <div
-                    key={u.id}
-                    className="flex items-center justify-between rounded-md bg-secondary/50 px-3 py-2"
-                  >
-                    <div>
-                      <p className="text-sm font-medium leading-tight">
-                        {u.username}
-                      </p>
-                      {u.displayName && (
-                        <p className="text-xs text-muted-foreground">
-                          {u.displayName}
+        {me?.username === "admin" && (
+          <Card className="border-border">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">
+                  Gerenciar usuários
+                </CardTitle>
+              </div>
+              <CardDescription className="text-xs">
+                Adicione ou remova quem pode acessar o painel
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="space-y-2">
+                {usersLoading ? (
+                  <div className="space-y-2">
+                    {[1, 2].map((i) => (
+                      <Skeleton key={i} className="h-10" />
+                    ))}
+                  </div>
+                ) : users.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-3">
+                    Nenhum usuário cadastrado
+                  </p>
+                ) : (
+                  users.map((u) => (
+                    <div
+                      key={u.id}
+                      className="flex items-center justify-between rounded-md bg-secondary/50 px-3 py-2"
+                    >
+                      <div>
+                        <p className="text-sm font-medium leading-tight">
+                          {u.username}
                         </p>
+                        {u.displayName && (
+                          <p className="text-xs text-muted-foreground">
+                            {u.displayName}
+                          </p>
+                        )}
+                      </div>
+                      {u.id === me?.id ? (
+                        <span className="text-[10px] text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                          você
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleDeleteUser(u.id, u.username)}
+                          disabled={deletingId === u.id}
+                          className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                          title={`Remover ${u.username}`}
+                        >
+                          {deletingId === u.id ? (
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
                       )}
                     </div>
-                    {u.id === me?.id ? (
-                      <span className="text-[10px] text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
-                        você
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handleDeleteUser(u.id, u.username)}
-                        disabled={deletingId === u.id}
-                        className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
-                        title={`Remover ${u.username}`}
-                      >
-                        {deletingId === u.id ? (
-                          <RefreshCw className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </button>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Divider */}
-            <div className="border-t border-border" />
-
-            {/* Add user form */}
-            <form onSubmit={handleCreateUser} className="space-y-3">
-              <p className="text-xs font-medium text-foreground">
-                Novo usuário
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="new-uname" className="text-xs">
-                    Usuário
-                  </Label>
-                  <Input
-                    id="new-uname"
-                    value={newUsername}
-                    onChange={(e) => setNewUsername(e.target.value)}
-                    placeholder="ex: mae"
-                    required
-                    className="h-9 text-sm"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="new-dname" className="text-xs">
-                    Nome (opcional)
-                  </Label>
-                  <Input
-                    id="new-dname"
-                    value={newDisplayName}
-                    onChange={(e) => setNewDisplayName(e.target.value)}
-                    placeholder="ex: Mãe"
-                    className="h-9 text-sm"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="new-upwd" className="text-xs">
-                  Senha
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="new-upwd"
-                    type={showNewPwd ? "text" : "password"}
-                    value={newUserPwd}
-                    onChange={(e) => setNewUserPwd(e.target.value)}
-                    placeholder="Mínimo 6 caracteres"
-                    required
-                    className="h-9 pr-9 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPwd(!showNewPwd)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    tabIndex={-1}
-                  >
-                    {showNewPwd ? (
-                      <EyeOff className="h-3.5 w-3.5" />
-                    ) : (
-                      <Eye className="h-3.5 w-3.5" />
-                    )}
-                  </button>
-                </div>
-              </div>
-              <Button
-                type="submit"
-                disabled={createLoading}
-                variant="outline"
-                className="w-full gap-2 h-9"
-              >
-                {createLoading ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    Criando...
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="h-4 w-4" />
-                    Criar usuário
-                  </>
+                  ))
                 )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+              </div>
+              <div className="border-t border-border" />
+              <form onSubmit={handleCreateUser} className="space-y-3">
+                <p className="text-xs font-medium text-foreground">
+                  Novo usuário
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="new-uname" className="text-xs">
+                      Usuário
+                    </Label>
+                    <Input
+                      id="new-uname"
+                      value={newUsername}
+                      onChange={(e) => setNewUsername(e.target.value)}
+                      placeholder="ex: mae"
+                      required
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="new-dname" className="text-xs">
+                      Nome (opcional)
+                    </Label>
+                    <Input
+                      id="new-dname"
+                      value={newDisplayName}
+                      onChange={(e) => setNewDisplayName(e.target.value)}
+                      placeholder="ex: Mãe"
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="new-upwd" className="text-xs">
+                    Senha
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="new-upwd"
+                      type={showNewPwd ? "text" : "password"}
+                      value={newUserPwd}
+                      onChange={(e) => setNewUserPwd(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      required
+                      className="h-9 pr-9 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPwd(!showNewPwd)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      tabIndex={-1}
+                    >
+                      {showNewPwd ? (
+                        <EyeOff className="h-3.5 w-3.5" />
+                      ) : (
+                        <Eye className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                <Button
+                  type="submit"
+                  disabled={createLoading}
+                  variant="outline"
+                  className="w-full gap-2 h-9"
+                >
+                  {createLoading ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      Criando...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-4 w-4" />
+                      Criar usuário
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </Layout>
   );

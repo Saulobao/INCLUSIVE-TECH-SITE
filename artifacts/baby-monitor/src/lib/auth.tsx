@@ -20,7 +20,7 @@ const AuthContext = createContext<AuthContextValue>({
   logout: async () => {},
 });
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -51,11 +51,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await fetch(`${BASE}/api/auth/logout`, { method: "POST", credentials: "include" });
+    await fetch(`${BASE}/api/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    });
     setUser(null);
   };
 
-  return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

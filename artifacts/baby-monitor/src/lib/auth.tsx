@@ -20,7 +20,7 @@ const AuthContext = createContext<AuthContextValue>({
   logout: async () => {},
 });
 
-const BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
+const BASE = "https://inclusive-tech-site.onrender.com";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);

@@ -3,17 +3,15 @@ import { db } from "@workspace/db";
 import { userTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
+import jwt from "jsonwebtoken";
 
 const router = Router();
+const JWT_SECRET = process.env.JWT_SECRET ?? "babywatch-jwt-secret";
 
 function getCurrentUser(req: any) {
-  if (req.session?.userId) {
+  if (req.tokenUser) return req.tokenUser;
+  if (req.session?.userId)
     return { id: req.session.userId, username: req.session.username };
-  }
-  if (req.tokenUser) {
-    return req.tokenUser;
-  }
   return null;
 }
 
@@ -45,15 +43,11 @@ router.post("/auth/login", async (req, res) => {
       return res.status(401).json({ error: "Usuário ou senha incorretos" });
     }
 
-    // Gera token e salva no banco
-    const token = crypto.randomBytes(32).toString("hex");
-    await db
-      .update(userTable)
-      .set({ sessionToken: token } as any)
-      .where(eq(userTable.id, user.id));
-
-    (req as any).session.userId = user.id;
-    (req as any).session.username = user.username;
+    const token = jwt.sign(
+      { id: user.id, username: user.username },
+      JWT_SECRET,
+      { expiresIn: "7d" },
+    );
 
     req.log.info({ userId: user.id }, "User logged in");
     return res.json({
@@ -72,17 +66,9 @@ router.post("/auth/login", async (req, res) => {
 });
 
 // POST /auth/logout
-router.post("/auth/logout", async (req, res) => {
-  const me = getCurrentUser(req);
-  if (me) {
-    await db
-      .update(userTable)
-      .set({ sessionToken: null } as any)
-      .where(eq(userTable.id, me.id));
-  }
-  (req as any).session.destroy(() => {
-    res.json({ ok: true });
-  });
+router.post("/auth/logout", (req, res) => {
+  (req as any).session?.destroy?.(() => {});
+  res.json({ ok: true });
 });
 
 // GET /auth/me

@@ -1,7 +1,8 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { Home, Bell, Activity, Settings, Monitor, Star } from "lucide-react";
+import { Home, Bell, Activity, Settings, Monitor, Star, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
 import { useGetDeviceStatus, getGetDeviceStatusQueryKey } from "@workspace/api-client-react";
 
 const NAV_ITEMS = [
@@ -14,6 +15,7 @@ const NAV_ITEMS = [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const { user, logout } = useAuth();
 
   const { data: deviceStatus } = useGetDeviceStatus({
     query: {
@@ -51,7 +53,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-border">
+        <div className="p-4 border-t border-border space-y-3">
+          {/* Status do monitor */}
           <div className={cn(
             "rounded-lg p-3 flex items-center gap-3",
             isOnline ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
@@ -67,21 +70,45 @@ export function Layout({ children }: { children: React.ReactNode }) {
               {isOnline ? "Monitor Online" : "Monitor Offline"}
             </div>
           </div>
+
+          {/* Usuário logado + sair */}
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs text-muted-foreground truncate max-w-[140px]">
+              {user?.username}
+            </span>
+            <button
+              onClick={logout}
+              title="Sair"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Sair
+            </button>
+          </div>
         </div>
       </aside>
 
       {/* ── Mobile Header ────────────────────────────────── */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-30 h-14 flex items-center justify-between px-4 bg-card border-b border-border">
         <img src="/logo.png" alt="InclusiveTech" className="h-9 w-auto object-contain" />
-        <div className={cn(
-          "flex items-center gap-2 text-xs font-medium px-2.5 py-1.5 rounded-full",
-          isOnline ? "bg-green-500/15 text-green-400" : "bg-destructive/15 text-destructive"
-        )}>
-          <span className={cn(
-            "h-2 w-2 rounded-full",
-            isOnline ? "bg-green-500" : "bg-destructive"
-          )} />
-          {isOnline ? "Online" : "Offline"}
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            "flex items-center gap-2 text-xs font-medium px-2.5 py-1.5 rounded-full",
+            isOnline ? "bg-green-500/15 text-green-400" : "bg-destructive/15 text-destructive"
+          )}>
+            <span className={cn(
+              "h-2 w-2 rounded-full",
+              isOnline ? "bg-green-500" : "bg-destructive"
+            )} />
+            {isOnline ? "Online" : "Offline"}
+          </div>
+          <button
+            onClick={logout}
+            title="Sair"
+            className="text-muted-foreground hover:text-destructive transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
